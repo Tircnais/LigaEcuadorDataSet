@@ -1,3 +1,21 @@
+Proyecto Extracción de data sobre fútbol
+======================
+
+### Tema: Generar _Dataset_.
+
+Versión `1.1.10`
+
+**Contenido**
+
+Aplicativo para brindar otro medio para la capacitación de estudiantes. Preguntas y respuestas empleando el consumo de datos via REST y JSON.
+
+  - [Aspecto Generales](#Aspecto-Generales)
+  - [Puesta en marcha](#Puesta-en-marcha)
+
+## Aspecto Generales ##
+- Ambiente de desarrollo
+   información que se debe tener presente en caso de seguir trabajando sobre el aplicativo.
+
 # Liga Ecuador DataSet
 Extracción de data sobre la Liga Serie A de Ecuador
 

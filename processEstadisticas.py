@@ -76,11 +76,6 @@ class ProcessEstadisticas():
             Returns:
                 dict: Metadata procesada de la estadista (revisar el orden)
         '''
-
-        # en SOUP esta TODA la pagina
-        dominio = 'https://footballdatabase.com/'
-
-        # print('PtsLocal\n\n\n', PtsLocal)
         # Metada de estadisticas
         # Acumulado
         div_acum = metaDataDict['Acumulado']
@@ -109,7 +104,7 @@ class ProcessEstadisticas():
         download_obj = parameters
         # se agrega el nombre de la funcion
         algorith_name = download_obj.get('method_name')
-        print('Algoritmo procesamiento\t', algorith_name)
+        print('Process Estadis funcion a ejecutar:\t', algorith_name)
         metodo = getattr(self, algorith_name, None)
         # print('Datos enviados a procesar\t', download_obj.keys())
         if metodo is not None:

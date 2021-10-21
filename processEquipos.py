@@ -4,6 +4,8 @@ import requests
 
 # Algoritmos de procesamiento de cada repositorio
 class ProcessMetaData():
+    """Clase para procesar equipos
+    """
     # Recibe HTML (consultdo de la BD para procesar los datos)
     list_error = []
     total_errors = 0
@@ -28,7 +30,7 @@ class ProcessMetaData():
         except Exception as e:
             self.log_error(where='procesamiento', html=html, exc=str(e))
     
-    def footballdatabase(self, metaDataDict={}):
+    def procesEquipos(self, metaDataDict={}):
         '''
         Algoritmo para el repositorio de OER Commons, retorna un diccionario con la metadata del recurso.
 
@@ -98,7 +100,7 @@ class ProcessMetaData():
         download_obj = parameters
         # se agrega el nombre de la funcion
         algorith_name = download_obj.get('method_name')
-        print('Algoritmo procesamiento\t', algorith_name)
+        print('Process Equipos funcion a ejecutar:\t', algorith_name)
         metodo = getattr(self, algorith_name, None)
         # print('Datos enviados a procesar\t', download_obj.keys())
         
