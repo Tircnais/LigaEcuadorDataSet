@@ -43,48 +43,51 @@ class ProcessMetaData():
         '''
 
         # dominio del sitio
-        dominio = 'https://footballdatabase.com/'
-        # Metadata de los resultados
-        # Acumulado
-        div_acum = metaDataDict['Acumulado']
-        # Local
-        div_local = metaDataDict['Local']
-        # Visitante
-        div_visit = metaDataDict['Visitante']
-        # usando BS4
-        div_acum = self.soup_html(div_acum)
-        div_local = self.soup_html(div_local)
-        div_visit = self.soup_html(div_visit)
-        # print('PtsLocal\n\n\n', PtsLocal)
-        # Metada de equipos
-        equiposT = div_acum.findAll('a', 'sm_logo-name')
-        equiposL = div_local.findAll('a', 'sm_logo-name')
-        equiposV = div_visit.findAll('a', 'sm_logo-name')
+        dominio = 'https://footballdatabase.com'
         # Lista de equipos
         EqTotal = list()
         EqLocal = list()
         EqVisitante = list()
-        # print('Total')
-        for elemento in equiposT:
-            titulo = elemento.get_text()
-            link = dominio + elemento.get('href')
-            info = {'nombre': titulo, 'link': link}
-            EqTotal.append(info)
-            # print(titulo, '\t', link)
-        # print('Local')
-        for elemento in equiposL:
-            titulo = elemento.get_text()
-            link = dominio + elemento.get('href')
-            info = {'nombre': titulo, 'link': link}
-            EqLocal.append(info)
-            # print(titulo, '\t', link)
-        # print('Visitante')
-        for elemento in equiposV:
-            titulo = elemento.get_text()
-            link = dominio + elemento.get('href')
-            info = {'nombre': titulo, 'link': link}
-            EqVisitante.append(info)
-            # print(titulo, '\t', link) 
+        # Metadata de los resultados
+        if 'Acumulado' in metaDataDict:
+            # Acumulado
+            div_acum = metaDataDict['Acumulado']
+            # usando BS4
+            div_acum = self.soup_html(div_acum)
+            # print('PtsLocal\n\n\n', div_acum)
+            # Metada de equipos
+            equiposT = div_acum.findAll('a', 'sm_logo-name')
+            # print('Total')
+            for elemento in equiposT:
+                titulo = elemento.get_text()
+                link = dominio + elemento.get('href')
+                info = {'nombre': titulo, 'link': link}
+                EqTotal.append(info)
+                # print(titulo, '\t', link)
+        elif 'Local' in metaDataDict:
+            # Local
+            div_local = metaDataDict['Local']
+            div_local = self.soup_html(div_local)
+            equiposL = div_local.findAll('a', 'sm_logo-name')
+            # print('Local')
+            for elemento in equiposL:
+                titulo = elemento.get_text()
+                link = dominio + elemento.get('href')
+                info = {'nombre': titulo, 'link': link}
+                EqLocal.append(info)
+                # print(titulo, '\t', link)
+        else:
+            # Visitante
+            div_visit = metaDataDict['Visitante']
+            div_visit = self.soup_html(div_visit)
+            equiposV = div_visit.findAll('a', 'sm_logo-name')
+            # print('Visitante')
+            for elemento in equiposV:
+                titulo = elemento.get_text()
+                link = dominio + elemento.get('href')
+                info = {'nombre': titulo, 'link': link}
+                EqVisitante.append(info)
+                # print(titulo, '\t', link) 
         # Diccionario con las estadisticas
         dataProcess = {
             'Acumulado': EqTotal,
@@ -101,6 +104,7 @@ class ProcessMetaData():
         # se agrega el nombre de la funcion
         algorith_name = download_obj.get('method_name')
         print('Process Equipos funcion a ejecutar:\t', algorith_name)
+        # print('Process Equipos keys:\t', download_obj.keys())
         metodo = getattr(self, algorith_name, None)
         # print('Datos enviados a procesar\t', download_obj.keys())
         

@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: localhost
--- Tiempo de generación: 17-10-2021 a las 06:08:21
+-- Tiempo de generación: 22-10-2021 a las 17:33:12
 -- Versión del servidor: 10.4.11-MariaDB
 -- Versión de PHP: 7.3.16
 
@@ -20,6 +20,8 @@ SET time_zone = "+00:00";
 --
 -- Base de datos: `ligaEcuador`
 --
+CREATE DATABASE IF NOT EXISTS `ligaEcuador` DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
+USE `ligaEcuador`;
 
 -- --------------------------------------------------------
 
@@ -72,7 +74,7 @@ CREATE TABLE `Partidos` (
   `eqB` int(11) NOT NULL COMMENT 'id del Equipo B',
   `golA` int(11) NOT NULL COMMENT 'goles del Equipo A',
   `golB` int(11) NOT NULL COMMENT 'goles del Equipo B',
-  `fecha` date NOT NULL
+  `fecha` year(4) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -146,13 +148,15 @@ ALTER TABLE `equipos`
 -- Indices de la tabla `metaDataEstadisticas`
 --
 ALTER TABLE `metaDataEstadisticas`
-  ADD PRIMARY KEY (`id`);
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `raw_html` (`raw_html`) USING HASH;
 
 --
 -- Indices de la tabla `metaDataPartidos`
 --
 ALTER TABLE `metaDataPartidos`
-  ADD PRIMARY KEY (`id`);
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `raw_html` (`raw_html`) USING HASH;
 
 --
 -- Indices de la tabla `Partidos`
@@ -257,6 +261,32 @@ ALTER TABLE `PosicionesTotal`
 --
 ALTER TABLE `PosicionesVisitante`
   ADD CONSTRAINT `PosicionesVisitante_ibfk_1` FOREIGN KEY (`fkEq`) REFERENCES `equipos` (`idEq`);
+
+-- proceed matches data
+-- check the result
+-- Creando Vistas funcionales
+CREATE VIEW IF NOT EXISTS Clubs AS
+	SELECT e.ideq, e.nombre, e.enlace
+	FROM equipos e;
+CREATE VIEW IF NOT EXISTS PtsTotal AS
+	SELECT e.nombre, pa.Pts, pa.PJ, pa.PG, pa.PE, pa.PP, pa.GF, pa.GC, pa.year
+	FROM equipos e, PosicionesTotal pa
+	WHERE e.idEq = pa.fkEq;
+CREATE VIEW IF NOT EXISTS PtsLocal AS
+	SELECT e.nombre, pl.Pts, pl.PJ, pl.PG, pl.PE, pl.PP, pl.GF, pl.GC, pl.year
+	FROM equipos e, PosicionesLocal pl
+	WHERE e.idEq = pl.fkEq;
+CREATE VIEW IF NOT EXISTS PtsVisitante AS
+	SELECT e.nombre, pv.Pts, pv.PJ, pv.PG, pv.PE, pv.PP, pv.GF, pv.GC, pv.year
+	FROM equipos e, PosicionesVisitante pv
+	WHERE e.idEq = pv.fkEq;
+CREATE VIEW IF NOT EXISTS TotalPartidosJugados AS
+	SELECT DISTINCT fkEq, year FROM PosicionesTotal;
+CREATE VIEW IF NOT EXISTS Encuentros AS
+	SELECT p.eqA, p.golA, p.eqB, p.golB, p.fecha
+	FROM equipos e, Partidos p
+	WHERE e.idEq = p.eqA and e.idEq= p.eqB;
+
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

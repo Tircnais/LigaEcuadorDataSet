@@ -77,25 +77,27 @@ class ProcessEstadisticas():
                 dict: Metadata procesada de la estadista (revisar el orden)
         '''
         # Metada de estadisticas
-        # Acumulado
-        div_acum = metaDataDict['Acumulado']
-        # Local
-        div_local = metaDataDict['Local']
-        # Visitante
-        div_visit = metaDataDict['Visitante']
-        # usando BS4
-        div_acum = self.soup_html(div_acum)
-        div_local = self.soup_html(div_local)
-        div_visit = self.soup_html(div_visit)
-        
-        tableTotal = div_acum.find('div', {'id': 'total'}).find('div', attrs={'class': 'table-responsive'}).find('table')
-        tableLocal = div_local.find('div', {'id': 'home'}).find('div', attrs={'class': 'table-responsive'}).find('table')
-        tableVisitante = div_visit.find('div', {'id': 'away'}).find('div', attrs={'class': 'table-responsive'}).find('table')
-        # print('\nDIV Estadisticas\n\n', tableTotal)
         table_data = {}
-        table_data['Acumulado'] = self.getDataTable(tableTotal)
-        table_data['Local'] = self.getDataTable(tableLocal)
-        table_data['Visistante'] = self.getDataTable(tableVisitante)
+        if 'Acumulado' in metaDataDict:
+            # Acumulado
+            div_acum = metaDataDict['Acumulado']
+            # usando BS4
+            div_acum = self.soup_html(div_acum)
+            tableTotal = div_acum.find('div', {'id': 'total'}).find('div', attrs={'class': 'table-responsive'}).find('table')
+            # print('\nDIV Estadisticas\n\n', tableTotal)
+            table_data['Acumulado'] = self.getDataTable(tableTotal)
+        elif 'Local' in metaDataDict:
+            # Local
+            div_local = metaDataDict['Local']
+            div_local = self.soup_html(div_local)
+            tableLocal = div_local.find('div', {'id': 'home'}).find('div', attrs={'class': 'table-responsive'}).find('table')
+            table_data['Local'] = self.getDataTable(tableLocal)
+        else:
+            # Visitante
+            div_visit = metaDataDict['Visitante']
+            div_visit = self.soup_html(div_visit)
+            tableVisitante = div_visit.find('div', {'id': 'away'}).find('div', attrs={'class': 'table-responsive'}).find('table')
+            table_data['Visistante'] = self.getDataTable(tableVisitante)
         return table_data
     
     def run_process(self, parameters={}):

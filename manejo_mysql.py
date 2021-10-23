@@ -1,4 +1,7 @@
-import pymysql#.cursors
+import pymysql
+# lib para establecer la conexion a la BD
+from datetime import datetime
+# lib para obtener la fecha actual (anio)
 
 class Database:
     # Variable para encontrar errores
@@ -67,7 +70,8 @@ class Database:
         id_Eq = self.search_equipo(equipo)
         sql = ''
         if id_Eq is None:
-            print('No hay estadisticas registradas de este equipo')
+            # print('No hay estadisticas registradas de este equipo')
+            return None
         else:
             # Busca sus estadisticas
             if opcion == 'Acumulado':
@@ -137,6 +141,25 @@ class Database:
             self.total_errors += 1
             self.log_error(where='buscando todos los equipos', html='sin parametros', exc=str(e), total_error = self.total_errors)
     
+    def detalle_equipo(self, nombre:str):
+        """Trae todas las columnas de la tabla Equipos
+
+        Args:
+            nombre (str): Nombre del equipo que busca
+
+        Returns:
+            array: Retorna un array con los campos solicitados
+        """
+        sql = 'Select * from equipos where nombre = %s'
+        try:
+            self.cursor.execute(sql, (nombre, ))
+            # por retornar un registro fetchone
+            equipos = self.cursor.fetchone()
+            return equipos
+        except Exception as e:
+            self.total_errors += 1
+            self.log_error(where='buscando todos los equipos', html='sin parametros', exc=str(e), total_error = self.total_errors)
+    
     def search_IdRawEstadisticas(self, rawEst: str):
         """Busca el HTML usando el enlace del mismo
 
@@ -148,7 +171,6 @@ class Database:
         """
         sql = 'Select id from metaDataEstadisticas Where raw_html = %s'
         # print('Consulta\t',sql)
-
         try:
             self.cursor.execute(sql, (rawEst, ))
             # por retornar un registro fetchone
@@ -158,6 +180,28 @@ class Database:
         except Exception as e:
             self.total_errors += 1
             self.log_error(where='buscando la metadataEstadistica (rawEst)', html=rawEst, exc=str(e), total_error = self.total_errors)
+
+    def search_RawEstadisticas(self, sitio: str, opcion):
+        """Busca el HTML usando el enlace del mismo
+
+        Args:
+            rawEst (str): Enlace del sito de donde se extrae la metadata
+
+        Returns:
+            int: ID del enlace o RAW a extraer
+        """
+        sql = 'Select id from metaDataEstadisticas Where sitio = %s and opcion = %s'
+        # print('Consulta\t',sql)
+
+        try:
+            self.cursor.execute(sql, (sitio, opcion, ))
+            # por retornar un registro fetchone
+            existe = self.cursor.fetchone()
+            # print('Result\t', existe)
+            return existe
+        except Exception as e:
+            self.total_errors += 1
+            self.log_error(where='buscando la metadataEstadistica (rawEst)', html=sitio+'||'+opcion, exc=str(e), total_error = self.total_errors)
     
     def search_IdRawPartidos(self, rawPartidos: str):
         """Busca el HTML usando el raw extraido
@@ -177,10 +221,10 @@ class Database:
             # print('Result\t', existe)
             return existe
         except Exception as e:
-            print('Error al buscar RAW Partidos')
+            # print('Error al buscar RAW Partidos')
             self.total_errors += 1
             self.log_error(where='buscando el raw de Partidos (rawPartidos)', html=rawPartidos, exc=str(e), total_error = self.total_errors)
-
+    
     def search_Partidos(self, eqA: str, golA: str, golB: str, eqB: str, year: str):
         # busca el ID cada equipo para registrar la FK del registro
         fkA = self.search_equipo(eqA)
@@ -195,12 +239,12 @@ class Database:
             return self.search_Partidos(eqA=eqA, golA=golA, golB=golB, eqB=eqB, year=year)
         else:
             sql = 'SELECT * FROM Partidos WHERE eqA = %s AND golA = %s AND golB = %s AND eqB = %s AND fecha= %s'
-            print('Buscando partido\t{}\t{}-{}\t{}\t{}'.format(fkA[0], golA, golB, fkB[0], year))
+            # print('Buscando partido\t{}\t{}-{}\t{}\t{}'.format(fkA[0], golA, golB, fkB[0], year))
             try:
                 self.cursor.execute(sql, (fkA[0], golA, golB, fkB[0], year, ))
                 existe = self.cursor.fetchone()
                 # por retornar un registro fetchone
-                print('Result Busq Partido\t', existe)
+                # print('Result Busq Partido\t', existe)
                 return existe
             except Exception as e:
                 self.total_errors += 1
@@ -243,27 +287,37 @@ class Database:
             self.total_errors += 1
             self.log_error(where='RAw NO procesado de Partidos', html='sin parametros', exc=str(e), total_error = self.total_errors)
 
-    def insert_RawEstadisticas(self, sitio: str, raw: str, opcion: str):
+    def insert_RawEstadisticas(self, sitio: str, raw: str, opcion: str, anio: str):
         idRaw = self.search_IdRawEstadisticas(raw)
-        if idRaw is None:
-            # sino hay el elemento lo registra
-            sql = "INSERT INTO metaDataEstadisticas(sitio, raw_html, opcion) VALUES (%s, %s, %s)"
-            print('Consulta insert MTD Estadisticas\t',sql)
-            try:
-                self.cursor.execute(sql, (sitio, raw, opcion, ))
-                # para que persistan los datos
-                self.connection.commit()
-                idRaw = self.search_IdRawEstadisticas(raw)
-                # regresa el ID del registro
-                
-                return idRaw
-            except Exception as e:
-                self.total_errors += 1
-                data = sitio+'\t'+opcion
-                self.log_error(where='Error al insertar RAW Estadisticas', html=data, exc=str(e), total_error = self.total_errors)
+        now = datetime.now()
+        if now.year == anio:
+            if idRaw is None:
+                # en caso de ser el anio actual y no se ha registrado
+                return self.insert_RawEstadisticas(sitio, raw, opcion, anio)
+            else:
+                # en caso de ser el anio actual actualiza el registro
+                return self.actualizar_RawEstadisticas(sitio, opcion)
         else:
-            # si hay el registro, regresa el ID
-            return idRaw
+            # sino es al anio actual registra la estadistica
+            if idRaw is None:
+                # sino hay el elemento lo registra
+                sql = "INSERT INTO metaDataEstadisticas(sitio, raw_html, opcion) VALUES (%s, %s, %s)"
+                # print('Consulta insert MTD Estadisticas\t',sql)
+                print('Consulta insert MTD Estadisticas.\tSitio:\t{}\t\tOpcion:\t{}'.format(sitio, opcion))
+                try:
+                    self.cursor.execute(sql, (sitio, raw, opcion, ))
+                    # para que persistan los datos
+                    self.connection.commit()
+                    idRaw = self.search_IdRawEstadisticas(raw)
+                    # regresa el ID del registro
+                    return idRaw
+                except Exception as e:
+                    self.total_errors += 1
+                    data = sitio+'\t'+opcion
+                    self.log_error(where='Error al insertar RAW Estadisticas', html=data, exc=str(e), total_error = self.total_errors)
+            else:
+                # si hay el registro, regresa el ID
+                return idRaw
 
     def insert_RawPartidos(self, sitio: str, raw: str):
         idRaw = self.search_IdRawPartidos(raw)
@@ -309,24 +363,49 @@ class Database:
             # si hay el registro, regresa el ID
             return idEq
     
+    def actulizar_Equipo(self, nombre: str, enlace: str):
+        idEq = self.search_equipo(nombre)
+        if idEq is None:
+            return self.insert_Equipos(nombre, enlace)
+        else:
+            # Si hay el elemento lo actualiza
+            sql = 'UPDATE equipos SET enlace=%s WHERE idEq=%s'
+            # print('Actualizando equipo\t',sql)
+            try:
+                self.cursor.execute(sql, (enlace, idEq[0], ))
+                # para que persistan los datos
+                self.connection.commit()
+                idEq = self.search_equipo(nombre)
+                # regresa el ID del registro
+                # print('ID:', idEq[0])
+                return idEq
+            except Exception as e:
+                self.total_errors += 1
+                self.log_error(where='Error al insertar Equipo', html=nombre+'\t'+enlace, exc=str(e), total_error = self.total_errors)
+    
     def insert_Equipos(self, lista):
         errores = 0
         for keyElemento in lista:
             elemento = lista[keyElemento]
             # print(keyElemento, "?:_", elemento)
             for k in elemento:
-                # .items()
                 # acedemos a cada llave(k), valor(v) de cada diccionario
                 nombre = k['nombre']
                 link = k['link']
-                # print('A insertar\n\n\r\n',nombre, link)
+                # print('Equipo a insertar:\t{}\t::\t{}'.format(nombre, link))
                 idEq = self.insert_Equipo(nombre, link)
-                if idEq is not None:
-                    # print('Registro exitoso')
-                    pass
-                else:
+                equipo = ''
+                if idEq is None:
                     errores +=1
-                    # print('Error al registrar', nombre)
+                    print('Error al registrar', nombre)
+                else:
+                    # print('Registro exitoso')
+                    equipo = self.detalle_equipo(nombre)
+                    if equipo[2] == '':
+                        # sino hay enlace del equipo, actualiza el registro
+                        idEq = self.actulizar_Equipo(nombre, link)
+                    else:
+                        pass
         return errores
 
     def insert_Estadisticas(self, opcion: str, equipo: str, anio: str, pts: str, pj: str, pg: str, pe: str, pp: str, gf: str, gc: str):
@@ -353,15 +432,11 @@ class Database:
         regEstad = self.search_EstadisticaAnio(equipo, opcion, anio)
         # Se toma el 2 valor del Result pueste este corresponde al FK del Equipo
         # print('\nBuscando estadisticas\n{}\n\n'.format(regEstad))
-        if type(regEstad) == list or type(regEstad) == tuple:
-            # UN SOLO registro (no debe haber mas de uno EQ y ANIO)
-            # si el equipo y anio son iguales a cualquier registro, se necesita una actualizacion (esto en especial para el anio en transcurso)
-            # print('\nEstos registros requieren actualizacion\n{}\t{}\t{}\n'.format(equipo, opcion, anio))
-            return regEstad
-        elif regEstad is None or regEstad == 0 or len(regEstad) == 0:
+        if regEstad is None:
+            #  or regEstad == 0 or len(regEstad) == 0
             # sino hay registro alguno
             idEq = self.search_equipo(equipo)
-            if idEq == None:
+            if idEq is None:
                 # inserta el registro del equipo
                 idEq = self.insert_Equipo(equipo, '')
                 # se llama a la funcion para proceder a registrar la estadistica
@@ -382,14 +457,13 @@ class Database:
                     idEq = self.search_EstadisticaAnio(equipo, opcion, anio)
                     # regresa el ID del registro
                     # print('ID:', idEq[0])
-                    return idEq[0]
+                    return idEq
                 except Exception as e:
                     # raise
                     self.total_errors += 1
                     self.log_error(where='Error al insertar Estadisticas', html='Revisar el orden de los datos a insertar', exc=str(e), total_error = self.total_errors)
         else:
-            self.total_errors += 1
-            self.log_error(where='Caso no previsto', html='Revisar el orden de los datos a insertar', exc=str('eror no previsto'), total_error = self.total_errors)
+            return regEstad
 
     def insert_Partido(self, eqA: str, golA: str, golB: str, eqB: str, year: str):
         existe = self.search_Partidos(eqA=eqA, golA=golA, golB=golB, eqB=eqB, year=year)
@@ -416,31 +490,44 @@ class Database:
             # si hay el registro, regresa el ID
             return existe
     
-    def actualizar_RawEstadisticas(self, sitio: str, raw: str, opcion: str):
-        idRaw = self.search_IdRawEstadisticas(raw)
+    def actualizar_RawEstadisticas(self, sitio: str, opcion: str):
+        """Usa el sitio y opcion para buscar el HTML corespondiente a esos parametros.
+
+        Args:
+            sitio (str): URL de la cual se extrae la metadata
+            opcion (str): Hace referencia los pts: Acumulado, Local y Visitante
+
+        Returns:
+            array: Returna None o array en caso de encontrar el registro
+        """
+        idRaw = self.search_RawEstadisticas(sitio, opcion)
+        print('Act. estadisticas-url::\t{}\t\tOpcion:\t{}'.format(sitio, opcion))
         if idRaw is None:
-            # sino hay el elemento lo registra
-            sql = "UPDATE metaDataEstadisticas SET process=1 WHERE sitio=%s and raw_html=%s and opcion=%s"
+            # sino hay el registro regresa NONE
+            return idRaw
+        else:
+            # si hay el registro, regresa el registro
+            sql = "UPDATE metaDataEstadisticas SET process=1 WHERE sitio=%s and opcion=%s"
             # print('Consulta actualizar MTD Estadisticas\t',sql)
             try:
-                self.cursor.execute(sql, (sitio, raw, opcion, ))
+                self.cursor.execute(sql, (sitio, opcion, ))
                 # para que persistan los datos
                 self.connection.commit()
-                idRaw = self.search_IdRawEstadisticas(raw)
+                idRaw = self.search_RawEstadisticas(sitio, opcion)
                 # regresa el ID del registro
                 return idRaw
             except Exception as e:
                 self.total_errors += 1
                 data = sitio+'\t'+opcion
                 self.log_error(where='Error al actualizar RAW Estadisticas', html=data, exc=str(e), total_error = self.total_errors)
-        else:
-            # si hay el registro, regresa el ID
-            return idRaw
     
     def actualizar_RawPartido(self, sitio: str, raw: str):
         idRaw = self.search_IdRawPartidos(raw)
         if idRaw is None:
-            # sino hay el elemento lo registra
+            # sino hay el registro regresa NONE
+            return idRaw
+        else:
+            # si hay el registro, regresa el registro
             sql = 'UPDATE metaDataPartidos SET process=1 WHERE sitio=%s and raw_html=%s'
             # print('Consulta update MTD Partidos\t',sql)
             try:
@@ -453,10 +540,73 @@ class Database:
             except Exception as e:
                 self.total_errors += 1
                 self.log_error(where='Error al actualizar RAW Partidos', html=sitio, exc=str(e), total_error = self.total_errors)
-        else:
-            # si hay el registro, regresa el ID
-            return idRaw
+    
+    def estadisticasTotales(self):
+        """Funcion util que hace uso de la vista (EstadisticasTotales) mencionada para generar el archivo CSV.
 
+        Returns:
+            array: Retorna la estadistica del equipo
+        """
+        sql = 'SELECT * FROM EstadisticasTotales'
+        try:
+            self.cursor.execute(sql)
+            # por retornar un registro fetchone
+            equipos = self.cursor.fetchall()
+            return equipos
+        except Exception as e:
+            self.total_errors += 1
+            self.log_error(where='Error al mostrar la estadistica totales/acumuladas', html='sin parametros', exc=str(e), total_error = self.total_errors)
+
+    def estadisticasLocales(self):
+        """Funcion util que hace uso de la vista (EstadisticasLocal) mencionada para generar el archivo CSV.
+
+        Returns:
+            array: Retorna la estadistica del equipo
+        """
+        sql = 'SELECT * FROM EstadisticasLocal'
+        try:
+            self.cursor.execute(sql)
+            # por retornar un registro fetchone
+            equipos = self.cursor.fetchall()
+            return equipos
+        except Exception as e:
+            self.total_errors += 1
+            self.log_error(where='Error al mostrar la estadistica locales', html='sin parametros', exc=str(e), total_error = self.total_errors)
+    
+    def estadisticasVisitantes(self):
+        """Funcion util que hace uso de la vista (EstadisticasVisitantes) mencionada para generar el archivo CSV.
+
+        Returns:
+            array: Retorna la estadistica del equipo
+        """
+        sql = 'SELECT * FROM EstadisticasVisitantes'
+        try:
+            self.cursor.execute(sql)
+            # por retornar un registro fetchone
+            equipos = self.cursor.fetchall()
+            return equipos
+        except Exception as e:
+            self.total_errors += 1
+            self.log_error(where='Error al mostrar la estadistica visitantes', html='sin parametros', exc=str(e), total_error = self.total_errors)
+    
+    def encuentros(self):
+        """Funcion util que hace uso de la vista (Encuentros) mencionada para generar el archivo CSV.
+
+        Returns:
+            array: Retorna la estadistica del equipo
+        """
+        sql = 'SELECT * FROM Encuentros'
+        # p.idP, eqA, eqB, p.golA, p.golB, p.fecha
+        # datos de la vista
+        try:
+            self.cursor.execute(sql)
+            # por retornar un registro fetchone
+            equipos = self.cursor.fetchall()
+            return equipos
+        except Exception as e:
+            self.total_errors += 1
+            self.log_error(where='Error los encuentros o partidos hasta la fecha', html='sin parametros', exc=str(e), total_error = self.total_errors)
+    
     def version(self):
         # ejecuta el SQL query usando el metodo execute().
         self.cursor.execute("SELECT VERSION()")

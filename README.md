@@ -1,37 +1,91 @@
-Proyecto Extracción de data sobre fútbol
+Proyecto Extracción de data
 ======================
 
-### Tema: Generar _Dataset_.
+### Objetivo: Generar _Dataset_.
 
 Versión `1.1.10`
 
-**Contenido**
+#### Table of Contents
 
-Aplicativo para brindar otro medio para la capacitación de estudiantes. Preguntas y respuestas empleando el consumo de datos via REST y JSON.
+- [Aspecto Generales](#Aspecto-Generales)  
+- [Puesta en marcha](#Puesta-en-marcha)
+- [Datos extraídos](#Datos-extraídos)  
+- [Diagrama UML](#Diagrama-UML)  
+- [Formulas aplicadas](#Formulas-aplicadas)  
 
-  - [Aspecto Generales](#Aspecto-Generales)
-  - [Puesta en marcha](#Puesta-en-marcha)
+## Aspecto Generales
 
-## Aspecto Generales ##
-- Ambiente de desarrollo
-   información que se debe tener presente en caso de seguir trabajando sobre el aplicativo.
+- ### Descripción
 
-# Liga Ecuador DataSet
-Extracción de data sobre la Liga Serie A de Ecuador
+  Aplicativo para extraer metadatos y generar un dataset sobre la [liga de fútbol de Ecuador Serie A](https://footballdatabase.com/league-scores-tables/ecuador-serie-a-2021).
+  
+  > Fuente [footballdatabase](https://footballdatabase.com)
 
-## Beautifulsoup4
-Usando BS4 para extraer la metada del sitio  [footballdatabase](https://footballdatabase.com)
-> Fuente
+- ### Dependencias
+  
+  A continuación las dependencias más importantes usadas para extraer la metadata del sitio.
+  - **_Beautifulsoup4_**
 
-## 
-https://footballdatabase.com/league-scores-tables/ecuador-serie-a-2021
+    ```python
+      Versión: 4.10.0
+    ```
+  
+  Usando BS4 para extraer la metada del sitio  [footballdatabase](https://footballdatabase.com)
+  - **_PyMySQL_**
+  
+    ```python
+      Versión: 1.0.2
+    ```
 
-- Markdown: publish the Markdown text on a website that can interpret it (**GitHub** for instance),
-- HTML: publish the file converted to HTML via a Handlebars template (on a blog for example).
+  Usando PyMySQL para conectar con la Base de datos.
 
-## Datos
+## Puesta en marcha
 
-Los datos que se van analizar son: las estadisticas y partidos por año.
+**1. Clonando el repositorio**
+
+```git
+  git clone https://github.com/Tircnais/LigaEcuadorDataSet.git
+```
+
+**2. Implementar el DLL proporcionado**
+
+```sql
+  ligaEcuador.sql
+```
+
+**3. Instalando dependencias**
+
+```python
+  pip3 install requirements.txt
+```
+
+Instalar dependencias del proyecto
+
+```python
+  pip3 install -r requirements.txt
+```
+
+Si se tiene problemas al instalar dependencias del proyecto
+
+**4. Ejecutando el proyecto**
+
+```python
+  python main.py
+```
+
+## Datos extraídos
+
+Los datos que se van analizar son: las estadisticas y partidos por año fueron extraidos apartir del año 2009 - 2021.
+
+### Equipos
+
+| ideq | nombre        | enlace                                                                      |
+|------|---------------|-----------------------------------------------------------------------------|
+| 1    | Barcelona SC  | https://footballdatabase.com/clubs-ranking/barcelona-sc-guayaquil           |
+| 2    | Independiente | https://footballdatabase.com/clubs-ranking/independiente-del-valle-sangolqu |
+| 3    | Emelec        | https://footballdatabase.com/clubs-ranking/emelec                           |
+
+El **ideq** es el número de registro correspondiente.
 
 ### Estadisticas
 
@@ -52,8 +106,6 @@ En dicha tabla la columna fkEq es la llave foranea hacia la tabla **Equipos**, y
 | 3   | 3      | 2      | 1      | 2      | 13/10/2021 |
 
 En dicha tabla la columna Team_A y Team_B representa el ID del equipo, estos son un ejemplo de como se almacenan los registros de los partidos.
-
-
 
 ## Diagrama UML
 
@@ -79,7 +131,9 @@ B --> D{Rhombus}
 C --> D
 ```
 
-## KaTeX --- Explicacion futura de las formulas para la predicción
+## Formulas aplicadas
+
+### KaTeX --- Explicacion futura de las formulas para la predicción
 
 You can render LaTeX mathematical expressions using [KaTeX](https://khan.github.io/KaTeX/):
 

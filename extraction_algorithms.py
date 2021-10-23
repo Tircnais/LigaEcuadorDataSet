@@ -6,10 +6,6 @@ from bs4 import BeautifulSoup as BS
 # para peticiones HTTP (para consumir un API, extraer información de una página o enviar el contenido de un formulario)
 import requests
 
-import json
-import datetime
-
-
 class Extraction():
     list_error = []
     total_errors = 0
@@ -54,17 +50,11 @@ class Extraction():
             # se consulta el HTML
             soup = self.soup_url(_url)
             # se busca el contenido
-            div_cnt = soup.find('div', {'id': 'wrap'}).find(
-                'div', {'class': 'mainfdb'})
+            div_cnt = soup.find('div', {'id': 'wrap'}).find('div', {'class': 'mainfdb'})
             # print('Dato a guardar\t', div_cnt)
-
-            PtsTotal = div_cnt.find(
-                'div', {'class': 'tab-content'}).find('div', {'id': 'total'})
-            PtsLocal = div_cnt.find(
-                'div', {'class': 'tab-content'}).find('div', {'id': 'home'})
-            PtsVisitante = div_cnt.find(
-                'div', {'class': 'tab-content'}).find('div', {'id': 'away'})
-
+            PtsTotal = div_cnt.find('div', {'class': 'tab-content'}).find('div', {'id': 'total'})
+            PtsLocal = div_cnt.find('div', {'class': 'tab-content'}).find('div', {'id': 'home'})
+            PtsVisitante = div_cnt.find('div', {'class': 'tab-content'}).find('div', {'id': 'away'})
             estadistica = {
                 'Acumulado': PtsTotal,
                 'Local': PtsLocal,
@@ -72,7 +62,7 @@ class Extraction():
             }
             return estadistica
         except Exception as e:
-            # print(e)
+            print('exc\n',str(e))
             self.total_errors += 1
             self.log_error(where='scrapyng', url=_url, exc=str(e), total_error=self.total_errors)
 
