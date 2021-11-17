@@ -26,7 +26,7 @@ class generar_CSV():
             gf = element[7]
             # gol en contra
             gc = element[8]
-            print('{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}'.format(equipo, year, pts, pj, pg, pe, pp, gf, gc))
+            # print('{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}'.format(equipo, year, pts, pj, pg, pe, pp, gf, gc))
             salida.append([equipo, year, pts, pj, pg, pe, pp, gf, gc])
         if opcion == 'Acumulado':
             with open('estadisticaGeneral.csv', 'w') as csvfile:
@@ -61,7 +61,7 @@ class generar_CSV():
             golA = element[3]
             golB = element[4]
             fecha = element[5]
-            print('{}\t{}\t{}\t{}\t{}'.format(equipoA, equipoB, golA, golB, fecha))
+            # print('{}\t{}\t{}\t{}\t{}'.format(equipoA, equipoB, golA, golB, fecha))
             encuentros.append([equipoA, equipoB, golA, golB, fecha])
         with open('partidos.csv', 'w') as csvfile:
             csvfile.write("equipo,year,pts,pj,pg,pe,pp,gf,gc\n")

@@ -8,14 +8,14 @@ class ProcessEstadisticas():
     total_errors = 0
     # Recibe HTML (nombre de la funcion method_name_repositories)
     # ----------------------- GENERAL MÉTHODS -----------------------
-    def log_error(self, where, html, exc, total_error):
+    def log_error(self, where, funtion, exc):
         self.total_errors=+1
         self.list_error.append(
             {
                 'where': where,
-                'html': html,
+                'when': funtion,
                 'exception': exc,
-                'total error': total_error
+                'total error': self.total_errors
             }
         )
         return self.list_error
@@ -25,7 +25,7 @@ class ProcessEstadisticas():
             soup = BS(html,'html.parser')
             return soup
         except Exception as e:
-            self.log_error(where='requesting', html=html, exc=str(e))
+            self.log_error(where='requesting', funtion='soup_html process Estad', exc=str(e))
     
     def getDataTable(self, tableTotal: str):
         """Tabla con las estadisticas de los partidos jugados, revisar el orden de las estadisticas.
@@ -64,21 +64,23 @@ class ProcessEstadisticas():
         # print('\nData Estadistica\n\n', table_data)
         return table_data
         
-    def estadisticas(self, metaDataDict={}):
+    def processDataEstadisticas(self, metaDataDict={}):
         '''
-        Algoritmo para la estraccion de data de estadisticas.
-        Extraccion de estadisticas por filas (recordar el orden al momento # P	+/-	M	W	D	L	F	A)
+            Algoritmo para la estraccion de data de estadisticas.
+            Extraccion de estadisticas por filas (recordar el orden al momento # P	+/-	M	W	D	L	F	A)
 
-            Parametros
-            ----------
-                html (longtext): Se refiere a la metadata no procesado
-            
-            Returns:
-                dict: Metadata procesada de la estadista (revisar el orden)
+                Parametros
+                ----------
+                    html (longtext): Se refiere a la metadata no procesado
+                
+                Returns:
+                    dict: Metadata procesada de la estadista (revisar el orden)
         '''
         # Metada de estadisticas
+        # print('Llaves de la MTD extraidos\t{}'.format(metaDataDict.keys()))
         table_data = {}
         if 'Acumulado' in metaDataDict:
+            # print('Key:\tAcumulado')
             # Acumulado
             div_acum = metaDataDict['Acumulado']
             # usando BS4
@@ -86,19 +88,31 @@ class ProcessEstadisticas():
             tableTotal = div_acum.find('div', {'id': 'total'}).find('div', attrs={'class': 'table-responsive'}).find('table')
             # print('\nDIV Estadisticas\n\n', tableTotal)
             table_data['Acumulado'] = self.getDataTable(tableTotal)
-        elif 'Local' in metaDataDict:
+            if table_data['Acumulado'] is None:
+                self.log_error(where='Procesando la MTD de estadisticas', funtion='estadisticas Opcion: Acumulado', exc='Elementos del HTML, no encontrados')
+        if 'Local' in metaDataDict:
+            # print('Key:\tLocal')
             # Local
             div_local = metaDataDict['Local']
             div_local = self.soup_html(div_local)
             tableLocal = div_local.find('div', {'id': 'home'}).find('div', attrs={'class': 'table-responsive'}).find('table')
             table_data['Local'] = self.getDataTable(tableLocal)
-        else:
+            if table_data['Local'] is None:
+                self.log_error(where='Procesando la MTD de estadisticas', funtion='estadisticas Opcion: Local', exc='Elementos del HTML, no encontrados')
+        if 'Visitante' in metaDataDict:
+            # print('Key:\tVisitante')
             # Visitante
             div_visit = metaDataDict['Visitante']
             div_visit = self.soup_html(div_visit)
             tableVisitante = div_visit.find('div', {'id': 'away'}).find('div', attrs={'class': 'table-responsive'}).find('table')
             table_data['Visistante'] = self.getDataTable(tableVisitante)
-        return table_data
+            if table_data['Visistante'] is None:
+                self.log_error(where='Procesando la MTD de estadisticas', funtion='estadisticas Opcion: Visistante', exc='Elementos del HTML, no encontrados')
+        resultados = {}
+        resultados['data'] = table_data
+        resultados['errores_procesamiento'] = self.list_error
+        resultados['process'] = 1 if len(self.list_error) == 0 else 0
+        return resultados
     
     def run_process(self, parameters={}):
         download_obj = dict()

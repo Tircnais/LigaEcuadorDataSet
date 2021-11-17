@@ -11,28 +11,35 @@ class ProcessMetaData():
     total_errors = 0
 
     # ----------------------- GENERAL MÉTHODS -----------------------
-    def log_error(self, where, html, exc, total_error):
+    def log_error(self, where, funtion, exc):
         self.total_errors=+1
         self.list_error.append(
             {
                 'where': where,
-                'html': html,
+                'when': funtion,
                 'exception': exc,
-                'total error': total_error
+                'total error': self.total_errors
             }
         )
         return self.list_error
     
     def soup_html(self, html):
+        """Recibe el HTML del cual se va a extraer la data
+
+            Args:
+                html (str): HTML guardado para ser analizado
+
+            Returns:
+                dict: {'Where':aaa, when:bbb, error:?b}
+        """
         try:
             soup = BS(html,'html.parser')
             return soup
         except Exception as e:
-            self.log_error(where='procesamiento', html=html, exc=str(e))
+            self.log_error(where='procesamiento', funtion='soup_html Equipos', exc=str(e))
     
-    def procesEquipos(self, metaDataDict={}):
-        '''
-        Algoritmo para el repositorio de OER Commons, retorna un diccionario con la metadata del recurso.
+    def processDataEquipos(self, metaDataDict={}):
+        '''Algoritmo para el repositorio de OER Commons, retorna un diccionario con la metadata del recurso.
 
             Parametros
             ----------
@@ -49,43 +56,52 @@ class ProcessMetaData():
         EqLocal = list()
         EqVisitante = list()
         # Metadata de los resultados
+        # print('Keys %s' % metaDataDict.keys())
         if 'Acumulado' in metaDataDict:
             # Acumulado
             div_acum = metaDataDict['Acumulado']
             # usando BS4
             div_acum = self.soup_html(div_acum)
-            # print('PtsLocal\n\n\n', div_acum)
+            # print('Pts Acumulado\n\n\n', div_acum)
             # Metada de equipos
-            equiposT = div_acum.findAll('a', 'sm_logo-name')
+            equiposT = div_acum.findAll('a', {'class' : 'sm_logo-name'})
             # print('Total')
             for elemento in equiposT:
+                # print('elemento\t', elemento)
                 titulo = elemento.get_text()
                 link = dominio + elemento.get('href')
-                info = {'nombre': titulo, 'link': link}
+                img = elemento['style']
+                img = dominio+ img.replace('background-image: url(','').replace(');','').replace('20px', '80px')
+                # print('elemento:\t{}\tTipo:\t{}\ta:\t{}'.format(elemento, type(elemento), img))
+                info = {'nombre': titulo, 'link': link, 'img': img}
                 EqTotal.append(info)
                 # print(titulo, '\t', link)
-        elif 'Local' in metaDataDict:
+        if 'Local' in metaDataDict:
             # Local
             div_local = metaDataDict['Local']
             div_local = self.soup_html(div_local)
-            equiposL = div_local.findAll('a', 'sm_logo-name')
+            equiposL = div_local.findAll('a', {'class' : 'sm_logo-name'})
             # print('Local')
             for elemento in equiposL:
                 titulo = elemento.get_text()
                 link = dominio + elemento.get('href')
-                info = {'nombre': titulo, 'link': link}
+                img = elemento['style']
+                img = dominio+ img.replace('background-image: url(','').replace(');','').replace('20px', '80px')
+                info = {'nombre': titulo, 'link': link, 'img': img}
                 EqLocal.append(info)
                 # print(titulo, '\t', link)
-        else:
+        if 'Visitante' in metaDataDict:
             # Visitante
             div_visit = metaDataDict['Visitante']
             div_visit = self.soup_html(div_visit)
-            equiposV = div_visit.findAll('a', 'sm_logo-name')
+            equiposV = div_visit.findAll('a', {'class' : 'sm_logo-name'})
             # print('Visitante')
             for elemento in equiposV:
                 titulo = elemento.get_text()
                 link = dominio + elemento.get('href')
-                info = {'nombre': titulo, 'link': link}
+                img = elemento['style']
+                img = dominio+ img.replace('background-image: url(','').replace(');','').replace('20px', '80px')
+                info = {'nombre': titulo, 'link': link, 'img': img}
                 EqVisitante.append(info)
                 # print(titulo, '\t', link) 
         # Diccionario con las estadisticas
@@ -98,6 +114,14 @@ class ProcessMetaData():
     
     # Ejecutar algoritmo de extracción
     def run_ProcessEquipos(self, parameters={}):
+        """Extraccion de clubs/equipos deportivos
+
+            Args:
+                parameters (dict, optional, method_name): Diccionario con la opciones: Acumulado/Local/Visitante y el *metodo* a ejecutar. Defaults to {}.
+
+            Returns:
+                dict: Lista con los equipos encontrados
+        """
         download_obj = dict()
         # se asigna o recupera los datos enviados
         download_obj = parameters

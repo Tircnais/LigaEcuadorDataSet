@@ -10,41 +10,51 @@ from processEstadisticas import ProcessEstadisticas
 from processPartidos import ProcessPartidos
 # generar CSV
 from archivo_csv import generar_CSV
-
+from datetime import datetime
+# lib para obtener la fecha actual (anio)
+tiempoInicio = datetime.now()
 # Abriendo la conexion a la BD
 objExtraction = Extraction()
 objDB = Database()
 diccionario = {'method_name': 'footballdatabase'}
-anio = 2021
+anio = datetime.now().year
 
-while anio > 2008:
+while anio > 2009:
     diccionario['url'] = f"https://footballdatabase.com/league-scores-tables/ecuador-serie-a-{anio}"
     url = diccionario['url']
     # print('URL a consultar:\t{}'.format(url))
     print('Anio extraer data:\t{}'.format(anio))
-    anio = int(anio) - 1
-    anio = int(anio)
     
     metadataEstadisticas = objExtraction.run_extraction(parameters=diccionario)
     # Dicionario con la metadata extraida (Acumulado, Local, Visitante)
     # print('Estadisticas metadata\n\n\n\n', metadataEstadisticas, '\n\n\n\n')
-    for item in metadataEstadisticas:
-        sitio = url
-        opcion = item
-        raw = metadataEstadisticas[item]
-        valido = objDB.insert_RawEstadisticas(sitio, raw, opcion, anio)
-        if valido is None:
-            print('Error al insertar RawEstadistica\t\tOpcion:\t{}\t\tRawEst:\t{}'.format(opcion, raw))
-        else:
-            # print('Registro de RAW Estadistica exitoso')
-            pass
-            # print(raw)
+    raw_html = metadataEstadisticas['raw_html']
+    estad_total = metadataEstadisticas['Acumulado']
+    estad_local = metadataEstadisticas['Local']
+    estad_visitante = metadataEstadisticas['Visitante']
+    errores = metadataEstadisticas['errors']
+    extract = metadataEstadisticas['extact']
+    fecha_process = ""
+    errors_process = ""
+    process = ""
+    valido = objDB.insert_RawEstadisticas(url, raw_html, estad_total, estad_local, estad_visitante, str(anio), errores, extract, fecha_process, errors_process, process)
+    if valido is None:
+        print('Error al insertar RawEstadistica\t\tSitio:\t{}\t\tErrors:\t{}'.format(url, errores))
+    else:
+        # print('Registro de RAW Estadistica exitoso')
+        pass
+        # print(raw)
     # Traemos la lista de Raw No procesados
     rawNoPross_Estadisticas = objDB.rawNoProcessEstadisticas()
-    # Cast de Tupla a Dict
-    metadata_Estadisticas = dict((x, y) for x, y in rawNoPross_Estadisticas)
     # print('Metadatos no procesados\n', metadata_Estadisticas)
-    metadata_Estadisticas['method_name'] = 'procesEquipos'
+    metadata_Estadisticas = {}
+    for elemento in rawNoPross_Estadisticas:
+        # print({'elemento':elemento})
+        # print({'Local':elemento[1]})
+        metadata_Estadisticas['Acumulado']= elemento[1]
+        metadata_Estadisticas['Local']= elemento[2]
+        metadata_Estadisticas['Visitante']= elemento[3]
+    metadata_Estadisticas['method_name'] = 'processDataEquipos'
     objProcessEquipos = ProcessMetaData()
     # print('keys\t', metadata_Estadisticas.keys())
     processEstadisticas = objProcessEquipos.run_ProcessEquipos(parameters=metadata_Estadisticas)
@@ -52,21 +62,24 @@ while anio > 2008:
     del objProcessEquipos
 
     # Insertando los equipos
+    print('Tipo de dato que envia para equipos:\t{}'.format(type(processEstadisticas)))
     errores = objDB.insert_Equipos(processEstadisticas)
 
     objProEstadisticas = ProcessEstadisticas()
-    metadata_Estadisticas['method_name'] = 'estadisticas'
+    metadata_Estadisticas['method_name'] = 'processDataEstadisticas'
     estadisticas = objProEstadisticas.run_process(metadata_Estadisticas)
     # retorna un dict con Acumulado, Local, Visitante
     # eliminando el objetdo creado
     del objProEstadisticas
     # print('\nData Procesada Estadisticas\n\n',estadisticas)
+    # print('Llaves de los datos extraidos\t{}'.format(estadisticas['data'].keys()))
     # Insertando Data procesada
-    for key in estadisticas:
-        # print('estadisticas-key::\t', key)
+    for key in estadisticas['data']:
+        opciones = estadisticas['data']
+        # print('estadisticas-key::\t{}\tTipo:/t{}'.format(key, type(opciones[key])))
         # print('Como\tClub\tYear\tPts\tGD\tPJ\tPG\tPE\tPP\tGA\tGC')
         resgHtmlEstadista =''
-        for element in estadisticas[key]:
+        for element in opciones[key]:
             # print('Estadistas y equipo\n{}'.format(element))
             equipo = element[1]
             year = url.split('/')[-1].split('-')[-1]
@@ -92,12 +105,17 @@ while anio > 2008:
         if resgHtmlEstadista is None:
             pass
         else:
-            # actualiza el registro con ese 
-            actHtmlEstadista = objDB.actualizar_RawEstadisticas(sitio = url, opcion = key)
+            # actualiza el registro con ese
+            fecha_process = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            fecha_process = datetime.strptime(fecha_process, '%Y-%m-%d %H:%M:%S')
+            # fecha del sistema con el formato deseado
+            errors_process = estadisticas['errores_procesamiento']
+            process = estadisticas['process']
+            actHtmlEstadista = objDB.actualizar_RawEstadisticas(sitio = url, anio = year, fecha_process=fecha_process, errores_process=errors_process, process=process)
             if actHtmlEstadista is None:
                 pass
             else:
-                print('Registro Estadistica actualizado:\t{}#\t\tSitio:\t{}\t\tOpcion\t{}'.format(actHtmlEstadista[0], url, opcion))
+                print('Registro Estadistica actualizado:\t{}#\t\tSitio:\t{}\t\tAnio\t{}'.format(actHtmlEstadista[0], url, anio))
     
     # URL para metadata de partidos
     dicDataPartidos = {'url': url}
@@ -107,28 +125,33 @@ while anio > 2008:
     # print('\n\nTipo dato enviado a procesar partidos\t', type(dicDataPartidos))
     dicMetadataPartidos = objExtraction.run_extraction(parameters=dicDataPartidos)
     # print('Tipo Metadata Partidos\t{}'.format(type(dicMetadataPartidos)))
-    # agrengado el nombre de la funcion que procesa la data de partidos
-    for metaPartidos in dicMetadataPartidos['metadata']:
-        # recorriendo la lista de HTML extraido
-        # print('URL\t{}\nRawPartido\n{}'.format(metaPartidos[0], metaPartidos[1]))
-        insertMdPartido = objDB.insert_RawPartidos(metaPartidos[0], metaPartidos[1])
-        # print('Raw partidos (tipo):\t{}'.format(type(insertMdPartido)))
-        if insertMdPartido is None:
-            print('No se inserto la metadadata (URL) de partidos\t{}'.format(metaPartidos[1]))
-        else:
-            # print('Se inserto la metadadata de partidos')
-            pass
-        
-        # ProcessPartidos
-        dictMtPartido = {}
+    # print('Errores Metadata Partidos\t{}'.format(dicMetadataPartidos['errores_extraccion']))
+    if dicMetadataPartidos['metadata'] is not None:
+        # se insert la metadata encontrada
+        for elemento in dicMetadataPartidos['metadata']:
+            # recorriendo la lista de HTML extraido
+            url_partido = elemento[0]
+            raw_partido = elemento[1]
+            anio_partido = elemento[2]
+            # print('URL_partido\t{}\nAnioPartido\n{}'.format(url_partido, anio_partido))
+            errores_extraccion = dicMetadataPartidos['errores_extraccion']
+            extract = dicMetadataPartidos['extract']
+            insertMdPartido = objDB.insert_RawPartidos(url_partido, raw_partido, anio_partido, errores_extraccion, extract)
+            # print('Raw partidos (tipo):\t{}'.format(type(insertMdPartido)))
+            if insertMdPartido is None:
+                print('No se inserto la metadadata (URL) de partidos\t{}'.format(url_partido))
+            else:
+                # print('Se inserto la metadadata de partidos')
+                pass
+        # Procesa la metada anteriormente Insertada y la que aun no se ha procesado
         rawNoPross_Partido = objDB.rawNoProcessPartidos()
-        # dictMtPartido = dict((x, y) for x, y in rawNoPross_Partido)
-        # print('Metadatos no procesados\n', metadata_Estadisticas)
+        dictMtPartido = {}
         dictMtPartido['metadata'] = rawNoPross_Partido
         dictMtPartido['method_name'] = 'processDataPartidos'
-        partido = ProcessPartidos()
-        dataPartido = partido.run_process(dictMtPartido)
-        # Orden de lista que regresa ((equipoA, golA, equipoB, golB, url_partidos, anio))
+        objProcessPartido = ProcessPartidos()
+        dataPartido = objProcessPartido.run_process(dictMtPartido)
+        # eliminando objeto creado
+        del objProcessPartido
         partidos = dataPartido['data']
         # print('Data recuperada partidos:\t{}\nValor\n{}'.format(dataPartido.keys(), type(partidos)))
         # aqui se insertan los partidos
@@ -148,24 +171,31 @@ while anio > 2008:
             if insertPart is None:
                 pass
             else:
-                # actualiza el registro con ese 
-                resgHtmlPartidos = objDB.actualizar_RawPartido(sitio = metaPartidos[0], raw=metaPartidos[1])
+                # actualiza el registro con ese
+                error_process = dataPartido['errores_procesamiento']
+                process = dataPartido['process']
+                fecha_process = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                fecha_process = datetime.strptime(fecha_process, '%Y-%m-%d %H:%M:%S')
+                resgHtmlPartidos = objDB.actualizar_RawPartido(sitio = url_partido, raw=raw_partido, fecha_process=fecha_process, errores_procesamiento=error_process, process=process)
                 if resgHtmlPartidos is None:
                     pass
                 else:
                     print('Registro partido actualizado:\t{}#\t::\tSitio:\t{}'.format(resgHtmlPartidos[0], url))
-            # eliminando objeto creado
-        del partido
+    # cambiando de anio
+    anio = int(anio) - 1
+    anio = int(anio)
 
 objArchivos = generar_CSV()
 estadisticaGeneral = objDB.estadisticasTotales()
 estadisticaLocal = objDB.estadisticasLocales()
 estadisticaVisitante = objDB.estadisticasVisitantes()
 encuentros = objDB.encuentros()
+"""
 print('CSV Tipo\t:{}'.format(type(estadisticaGeneral)))
 print('CSV Tipo\t:{}'.format(type(estadisticaLocal)))
 print('CSV Tipo\t:{}'.format(type(estadisticaVisitante)))
 print('CSV Tipo\t:{}'.format(type(encuentros)))
+"""
 objArchivos.csv_estadisticas(estadisticaGeneral, 'Acumulado')
 objArchivos.csv_estadisticas(estadisticaLocal, 'Local')
 objArchivos.csv_estadisticas(estadisticaVisitante, 'Visitante')
@@ -178,3 +208,6 @@ del objExtraction
 # Romper ejecucion
 # import sys
 # sys.exit()
+tiempoFin = datetime.now()
+timepoEjecucion = tiempoFin - tiempoInicio
+print('Inicio:\t\t{}\nFin:\t\t{}\n______________________________________\nTiempo de ejecucion\t{}'.format(tiempoInicio, tiempoFin, timepoEjecucion))
