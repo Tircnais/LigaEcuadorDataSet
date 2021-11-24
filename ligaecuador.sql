@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: localhost
--- Tiempo de generación: 17-11-2021 a las 18:33:11
+-- Tiempo de generación: 17-11-2021 a las 21:21:23
 -- Versión del servidor: 10.4.21-MariaDB
 -- Versión de PHP: 8.0.12
 
@@ -29,7 +29,6 @@ USE `ligaecuador`;
 -- Estructura Stand-in para la vista `clubs`
 -- (Véase abajo para la vista actual)
 --
-DROP VIEW IF EXISTS `clubs`;
 CREATE TABLE `clubs` (
 `idEq` int(11)
 ,`nombre` varchar(120)
@@ -43,11 +42,10 @@ CREATE TABLE `clubs` (
 -- Estructura Stand-in para la vista `conteo_estadisticas`
 -- (Véase abajo para la vista actual)
 --
-DROP VIEW IF EXISTS `conteo_estadisticas`;
 CREATE TABLE `conteo_estadisticas` (
-`conteo_totales` bigint(21)
-,`conteo_locales` bigint(21)
-,`conteo_visitante` bigint(21)
+`pt` bigint(21)
+,`pl` bigint(21)
+,`pv` bigint(21)
 );
 
 -- --------------------------------------------------------
@@ -56,7 +54,6 @@ CREATE TABLE `conteo_estadisticas` (
 -- Estructura Stand-in para la vista `encuentros`
 -- (Véase abajo para la vista actual)
 --
-DROP VIEW IF EXISTS `encuentros`;
 CREATE TABLE `encuentros` (
 `idP` int(11)
 ,`eqA` varchar(120)
@@ -72,7 +69,6 @@ CREATE TABLE `encuentros` (
 -- Estructura de tabla para la tabla `equipos`
 --
 
-DROP TABLE IF EXISTS `equipos`;
 CREATE TABLE `equipos` (
   `idEq` int(11) NOT NULL COMMENT 'Id del Equipo y PK',
   `nombre` varchar(120) NOT NULL COMMENT 'Nombre del equipo',
@@ -86,7 +82,6 @@ CREATE TABLE `equipos` (
 -- Estructura Stand-in para la vista `estadisticaslocal`
 -- (Véase abajo para la vista actual)
 --
-DROP VIEW IF EXISTS `estadisticaslocal`;
 CREATE TABLE `estadisticaslocal` (
 `nombre` varchar(120)
 ,`year` int(11)
@@ -105,7 +100,6 @@ CREATE TABLE `estadisticaslocal` (
 -- Estructura Stand-in para la vista `estadisticastotales`
 -- (Véase abajo para la vista actual)
 --
-DROP VIEW IF EXISTS `estadisticastotales`;
 CREATE TABLE `estadisticastotales` (
 `nombre` varchar(120)
 ,`year` int(11)
@@ -124,7 +118,6 @@ CREATE TABLE `estadisticastotales` (
 -- Estructura Stand-in para la vista `estadisticasvisitantes`
 -- (Véase abajo para la vista actual)
 --
-DROP VIEW IF EXISTS `estadisticasvisitantes`;
 CREATE TABLE `estadisticasvisitantes` (
 `nombre` varchar(120)
 ,`year` int(11)
@@ -143,7 +136,6 @@ CREATE TABLE `estadisticasvisitantes` (
 -- Estructura de tabla para la tabla `metadataestadisticas`
 --
 
-DROP TABLE IF EXISTS `metadataestadisticas`;
 CREATE TABLE `metadataestadisticas` (
   `id` int(11) NOT NULL COMMENT 'PK del HTML extraido',
   `sitio` varchar(255) NOT NULL COMMENT 'Fuente de donde se extrajo la metadata',
@@ -166,7 +158,6 @@ CREATE TABLE `metadataestadisticas` (
 -- Estructura de tabla para la tabla `metadatapartidos`
 --
 
-DROP TABLE IF EXISTS `metadatapartidos`;
 CREATE TABLE `metadatapartidos` (
   `id` int(11) NOT NULL COMMENT 'PK del HTML extraido',
   `sitio` varchar(255) NOT NULL COMMENT 'Fuente de donde se extrajo la metadata',
@@ -186,7 +177,6 @@ CREATE TABLE `metadatapartidos` (
 -- Estructura de tabla para la tabla `partidos`
 --
 
-DROP TABLE IF EXISTS `partidos`;
 CREATE TABLE `partidos` (
   `idP` int(11) NOT NULL COMMENT 'ID del partido',
   `eqA` int(11) NOT NULL COMMENT 'id del Equipo A',
@@ -202,7 +192,6 @@ CREATE TABLE `partidos` (
 -- Estructura de tabla para la tabla `posicioneslocal`
 --
 
-DROP TABLE IF EXISTS `posicioneslocal`;
 CREATE TABLE `posicioneslocal` (
   `idP` int(11) NOT NULL COMMENT 'ID del detalle o posiciones en la tabla',
   `fkEq` int(11) NOT NULL COMMENT 'FK del Equipo',
@@ -222,7 +211,6 @@ CREATE TABLE `posicioneslocal` (
 -- Estructura de tabla para la tabla `posicionestotal`
 --
 
-DROP TABLE IF EXISTS `posicionestotal`;
 CREATE TABLE `posicionestotal` (
   `idP` int(11) NOT NULL COMMENT 'ID del detalle o posiciones en la tabla',
   `fkEq` int(11) NOT NULL COMMENT 'FK del Equipo',
@@ -242,7 +230,6 @@ CREATE TABLE `posicionestotal` (
 -- Estructura de tabla para la tabla `posicionesvisitante`
 --
 
-DROP TABLE IF EXISTS `posicionesvisitante`;
 CREATE TABLE `posicionesvisitante` (
   `idP` int(11) NOT NULL COMMENT 'ID del detalle o posiciones en la tabla',
   `fkEq` int(11) NOT NULL COMMENT 'FK del Equipo',
@@ -263,7 +250,6 @@ CREATE TABLE `posicionesvisitante` (
 --
 DROP TABLE IF EXISTS `clubs`;
 
-DROP VIEW IF EXISTS `clubs`;
 CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `clubs`  AS SELECT `equipos`.`idEq` AS `idEq`, `equipos`.`nombre` AS `nombre`, `equipos`.`enlace` AS `enlace`, `equipos`.`img` AS `img` FROM `equipos` ;
 
 -- --------------------------------------------------------
@@ -273,8 +259,7 @@ CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW 
 --
 DROP TABLE IF EXISTS `conteo_estadisticas`;
 
-DROP VIEW IF EXISTS `conteo_estadisticas`;
-CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `conteo_estadisticas`  AS SELECT `pt`.`conteo_totales` AS `conteo_totales`, `pl`.`conteo_locales` AS `conteo_locales`, `pv`.`conteo_visitante` AS `conteo_visitante` FROM (((select count(0) AS `conteo_totales` from `posicionestotal`) `pt` join (select count(0) AS `conteo_locales` from `posicioneslocal`) `pl`) join (select count(0) AS `conteo_visitante` from `posicionesvisitante`) `pv`) ;
+CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `conteo_estadisticas`  AS SELECT (select count(0) AS `conteo_totales` from `posicionestotal`) AS `pt`, (select count(0) AS `conteo_locales` from `posicioneslocal`) AS `pl`, (select count(0) AS `conteo_visitante` from `posicionesvisitante`) AS `pv` ;
 
 -- --------------------------------------------------------
 
@@ -283,7 +268,6 @@ CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW 
 --
 DROP TABLE IF EXISTS `encuentros`;
 
-DROP VIEW IF EXISTS `encuentros`;
 CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `encuentros`  AS SELECT `p`.`idP` AS `idP`, `tablaa1`.`nombre` AS `eqA`, `tablaa2`.`nombre` AS `eqB`, `p`.`golA` AS `golA`, `p`.`golB` AS `golB`, `p`.`fecha` AS `fecha` FROM ((`partidos` `p` join `equipos` `tablaa1` on(`tablaa1`.`idEq` = `p`.`eqA`)) join `equipos` `tablaa2` on(`tablaa2`.`idEq` = `p`.`eqB`)) ORDER BY `p`.`idP` ASC, `p`.`fecha` ASC ;
 
 -- --------------------------------------------------------
@@ -293,7 +277,6 @@ CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW 
 --
 DROP TABLE IF EXISTS `estadisticaslocal`;
 
-DROP VIEW IF EXISTS `estadisticaslocal`;
 CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `estadisticaslocal`  AS SELECT DISTINCT `eq`.`nombre` AS `nombre`, `el`.`year` AS `year`, `el`.`Pts` AS `Pts`, `el`.`PJ` AS `PJ`, `el`.`PG` AS `PG`, `el`.`PE` AS `PE`, `el`.`PP` AS `PP`, `el`.`GF` AS `GF`, `el`.`GC` AS `GC` FROM (`posicioneslocal` `el` join `equipos` `eq`) WHERE `el`.`fkEq` = `eq`.`idEq` ORDER BY `el`.`year` DESC ;
 
 -- --------------------------------------------------------
@@ -303,7 +286,6 @@ CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW 
 --
 DROP TABLE IF EXISTS `estadisticastotales`;
 
-DROP VIEW IF EXISTS `estadisticastotales`;
 CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `estadisticastotales`  AS SELECT DISTINCT `eq`.`nombre` AS `nombre`, `et`.`year` AS `year`, `et`.`Pts` AS `Pts`, `et`.`PJ` AS `PJ`, `et`.`PG` AS `PG`, `et`.`PE` AS `PE`, `et`.`PP` AS `PP`, `et`.`GF` AS `GF`, `et`.`GC` AS `GC` FROM (`posicionestotal` `et` join `equipos` `eq`) WHERE `et`.`fkEq` = `eq`.`idEq` ORDER BY `et`.`year` DESC ;
 
 -- --------------------------------------------------------
@@ -313,7 +295,6 @@ CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW 
 --
 DROP TABLE IF EXISTS `estadisticasvisitantes`;
 
-DROP VIEW IF EXISTS `estadisticasvisitantes`;
 CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `estadisticasvisitantes`  AS SELECT DISTINCT `eq`.`nombre` AS `nombre`, `ev`.`year` AS `year`, `ev`.`Pts` AS `Pts`, `ev`.`PJ` AS `PJ`, `ev`.`PG` AS `PG`, `ev`.`PE` AS `PE`, `ev`.`PP` AS `PP`, `ev`.`GF` AS `GF`, `ev`.`GC` AS `GC` FROM (`posicionesvisitante` `ev` join `equipos` `eq`) WHERE `ev`.`fkEq` = `eq`.`idEq` ORDER BY `ev`.`year` DESC ;
 
 --
@@ -330,15 +311,13 @@ ALTER TABLE `equipos`
 -- Indices de la tabla `metadataestadisticas`
 --
 ALTER TABLE `metadataestadisticas`
-  ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `uniqui_raw_html` (`raw_html`) USING HASH;
+  ADD PRIMARY KEY (`id`);
 
 --
 -- Indices de la tabla `metadatapartidos`
 --
 ALTER TABLE `metadatapartidos`
-  ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `unico_raw_html` (`raw_html`) USING HASH;
+  ADD PRIMARY KEY (`id`);
 
 --
 -- Indices de la tabla `partidos`

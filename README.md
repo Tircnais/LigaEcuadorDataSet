@@ -49,9 +49,7 @@ Versión `1.1.14`
 
 **2. Implementar el DLL proporcionado**
 
-```sql
-  ligaEcuador.sql
-```
+> [ligaEcuador.sql](https://github.com/Tircnais/LigaEcuadorDataSet/blob/master/ligaecuador.sql)
 
 **3. Instalando dependencias**
 
@@ -79,11 +77,11 @@ Los datos que se van analizar son: las estadisticas y partidos por año fueron e
 
 ### Equipos
 
-| ideq | nombre        | enlace                                                                      |
-|------|---------------|-----------------------------------------------------------------------------|
-| 1    | Barcelona SC  | https://footballdatabase.com/clubs-ranking/barcelona-sc-guayaquil           |
-| 2    | Independiente | https://footballdatabase.com/clubs-ranking/independiente-del-valle-sangolqu |
-| 3    | Emelec        | https://footballdatabase.com/clubs-ranking/emelec                           |
+| ideq | nombre | enlace | img |
+|------|--------|--------|-----|
+| 1 | Barcelona SC | https://footballdatabase.com/clubs-ranking/barcelona-sc-guayaquil | https://footballdatabase.com/logos/club/80px/708.png |
+| 2 | Independiente | https://footballdatabase.com/clubs-ranking/independiente-del-valle-sangolqui | https://footballdatabase.com/logos/club/80px/713.png |
+| 3 | Emelec | https://footballdatabase.com/clubs-ranking/emelec | https://footballdatabase.com/logos/club/80px/711.png |
 
 El **ideq** es el número de registro correspondiente.
 
@@ -95,11 +93,11 @@ El **ideq** es el número de registro correspondiente.
 | 2   | 2    | 2021 | 13  | 7  | 5  | 1  | 1  | 4  | 3  |
 | 3   | 3    | 2021 | 11  | 7  | 3  | 2  | 2  | 5  | 2  |
 
-En dicha tabla la columna fkEq es la llave foranea hacia la tabla **Equipos**, year es el año. Para obtener el orden de **posicion** se debe realizar una **consulta en base a los puntos**. **Las estadisticas se ha dividido en tres tabla** con las misma cantidad de columnas y nombres esto con el fin de obtner los puntos: **acumulados**, **local** y **visitante**.
+En dicha tabla la columna **fkEq** es la llave foranea hacia la tabla **Equipos**, year es el año. Para obtener el orden de **posicion** se debe realizar una **consulta en base a los puntos**. **Las estadisticas se ha dividido en tres tabla** con las misma cantidad de columnas y nombres esto con el fin de obtner los puntos: **acumulados**, **local** y **visitante**.
 
 ### Partidos
 
-| idP | Team_A | Team_B | Goal_A | Goal_B | Date       |
+| idP | Team_A | Team_B | Goal_A | Goal_B | Fecha       |
 |-----|--------|--------|--------|--------|------------|
 | 1   | 1      | 3      | 2      | 0      | 11/10/2021 |
 | 2   | 2      | 1      | 3      | 1      | 12/10/2021 |
@@ -132,6 +130,12 @@ C --> D
 ```
 
 ## Formulas aplicadas
+
+### Distribución Poisson
+
+### Distribución skellam
+
+
 
 ### KaTeX --- Explicacion futura de las formulas para la predicción
 
