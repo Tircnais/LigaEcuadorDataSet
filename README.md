@@ -105,17 +105,18 @@ En dicha tabla la columna **fkEq** es la llave foranea hacia la tabla **Equipos*
 
 En dicha tabla la columna Team_A y Team_B representa el ID del equipo, estos son un ejemplo de como se almacenan los registros de los partidos.
 
+<!--
 ## Diagrama UML
 
 ```mermaid
 sequenceDiagram
 main ->> extraction_algorithms: Ejecuta la funcion footballdatabase
-main-->>John: How about you John?
+main--:>>>John: How about you John?
 main--x Alice: I am good thanks!
 main-x John: I am good thanks!
 Note right of John: main thinks a long<br/>long time, so long<br/>that the text does<br/>not fit on a row.
 
-main-->Alice: Checking with John...
+main--;>Alice: Checking with John...
 Alice->John: Yes... John, how are you?
 ```
 
@@ -123,10 +124,10 @@ And this will produce a flow chart:
 
 ```mermaid
 graph LR
-main[Square Rect] -- Link text --> B((Circle))
-main --> C(Round Rect)
-B --> D{Rhombus}
-C --> D
+main[Square Rect] -- Link text --;> B((Circle))
+main --;> C(Round Rect)
+B --;> D{Rhombus}
+C --;> D
 ```
 
 ## Formulas aplicadas
@@ -146,3 +147,4 @@ The *Gamma function* satisfying $\Gamma(n) = (n-1)!\quad\forall n\in\mathbb N$ i
 $$
 \Gamma(z) = \int_0^\infty t^{z-1}e^{-t}dt\,.
 $$
+-->
