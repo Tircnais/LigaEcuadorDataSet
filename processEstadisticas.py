@@ -61,7 +61,7 @@ class ProcessEstadisticas():
                 dato = td.text.replace('\n', '').strip()
                 t_row.append(dato)
             table_data.append(t_row)
-        # print('\nData Estadistica\n\n', table_data)
+        print('Data Estadistica\n\n', table_data)
         return table_data
         
     def processDataEstadisticas(self, metaDataDict={}):

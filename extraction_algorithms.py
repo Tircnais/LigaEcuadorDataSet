@@ -25,6 +25,7 @@ class Extraction():
 
     def soup_url(self, url):
         try:
+            print('URL entrante:\t%s'%(url))
             web = requests.get(url)
             content = web.content
             soup = BS(content, 'html.parser')
@@ -56,7 +57,7 @@ class Extraction():
             PtsLocal = div_cnt.find('div', {'class': 'tab-content'}).find('div', {'id': 'home'})
             PtsVisitante = div_cnt.find('div', {'class': 'tab-content'}).find('div', {'id': 'away'})
             extract = 0
-            if type(contenido) is None and type(contenido) is None and type(contenido) is None and type(contenido) is None:
+            if type(contenido) is None and type(PtsTotal) is None and type(PtsLocal) is None and type(PtsVisitante) is None:
                 self.log_error(where='scrapyng: %s' %_url, funtion='Funcion: footballdatabase', exc='No se encontro el elemento HTML')
                 errores_extraccion = self.log_error
                 extract = 1 if len(self.list_error) == 0 else 0
@@ -161,6 +162,7 @@ class Extraction():
         download_obj["url"] = parameters['url']
         algorith_name = download_obj.get('method_name')
         # print('ExtracciónAlgoritmos funcion a ejecutar:\t', algorith_name)
+        # print('URL consultar:\t%s'%(download_obj["url"]))
         metodo = getattr(self, algorith_name, None)
         if metodo is not None:
             respuesta = metodo(download_obj)  # ejecutandose el método.

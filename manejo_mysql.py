@@ -277,7 +277,8 @@ class Database:
             self.log_error(where='Listando RawPartidos NO procesada', funtion='Funcion: rawNoProcessPartidos', exc=str(e))
 
     def insert_RawEstadisticas(self, sitio: str, raw: str, estad_total: str, estad_local: str, estad_visitante: str, anio: str, errores_extraccion: str, extract: str, fecha_process:str, errores_process:str, process:str):
-        """Registrando el HTML de las estadisticas
+        """
+            Registrando el HTML de las estadisticas
 
             Args:
                 sitio (str): URL del sitio de donde se extrae el HTML
@@ -295,14 +296,10 @@ class Database:
         """
         idRaw = self.search_IdRawEstadisticas(raw)
         now = datetime.now()
-        if now.year == anio:
+        if now.year == anio and idRaw is not None:
             # anio actual
-            if idRaw is None:
-                # en caso de ser el anio actual y no se ha registrado
-                return self.insert_RawEstadisticas(sitio, raw, estad_total, estad_local, estad_visitante, anio, errores_extraccion, extract)
-            else:
-                # en caso de ser el anio actual actualiza el registro
-                return self.actualizar_RawEstadisticas(sitio, anio, fecha_process, errores_process, process)
+            # en caso de ser el anio actual actualiza el registro
+            return self.actualizar_RawEstadisticas(sitio, anio, fecha_process, errores_process, process)
         else:
             # sino es al anio actual registra la estadistica
             if idRaw is None:
@@ -338,13 +335,54 @@ class Database:
         """
         idRaw = self.search_IdRawPartidos(raw)
         # print('URL rawPartido\t',sitio)
-        if idRaw is None:
+        now = datetime.now()
+        if now.year == anio and idRaw is not None:
+            # anio actual
+            # en caso de ser el anio actual actualiza el registro
+            return self.actualizar_RawPartidos(sitio, raw, anio, errores_extraccion, extract)
+        else:
+            if idRaw is None:
+                # sino hay el elemento lo registra
+                sql = "INSERT INTO metadatapartidos(sitio, raw_html, anio, errores_extraccion, extract) VALUES (%s, %s, %s, %s, %s)"
+                # print('Consulta RawPart\t',sql)
+                try:
+                    errores_extraccion = json.dumps(errores_extraccion)
+                    self.cursor.execute(sql, (sitio, raw, anio, errores_extraccion, extract, ))
+                    # para que persistan los datos
+                    self.connection.commit()
+                    idRaw = self.search_IdRawPartidos(raw)
+                    # regresa el ID del registro
+                    return idRaw
+                except Exception as e:
+                    # print('Error al inser RAW Partidos')
+                    self.log_error(where='Error al insertar RAW Partidos (%s)' %sitio, funtion='Funcion: insert_RawPartidos', exc=str(e))
+            else:
+                # si hay el registro, regresa el ID
+                return idRaw
+    
+    def actualizar_RawPartidos(self, sitio: str, raw: str, anio: str, errores_extraccion: str, extract: str):
+        """
+            Registrando la metadata de los partidos, incluyendo los errores encontrados, al extraer
+
+            Args:
+                sitio (str): URL del sito donde se buscan los partidos
+                raw (str): html a extraer
+                anio (str): anio de los partidos
+                errores_extraccion (str): errores encontrados al extraer la metadata
+                extract (str): 1/0 para determinar si se extrajo la metadata, en caso de extraer la metadata correctamente (1)
+            Returns:
+                [type]: [description]
+        """
+        idRaw = self.search_IdRawPartidos(raw)
+        # print('URL rawPartido\t',sitio)
+        if idRaw is not None:
             # sino hay el elemento lo registra
-            sql = "INSERT INTO metadatapartidos(sitio, raw_html, anio, errores_extraccion, extract) VALUES (%s, %s, %s, %s, %s)"
+            # UPDATE metadatapartidos SET sitio='[value-2]',raw_html='[value-3]',anio='[value-4]',fecha_extract='[value-5]',errores_extraccion='[value-6]',extract='[value-7]',fecha_process='[value-8]',errores_procesamiento='[value-9]',process='[value-10]' WHERE 1
+            sql = "UPDATE SET metadatapartidos SET sitio = %s, raw_html = %s, anio = %s, errores_extraccion = %s, extract = %s WHERE raw_html = %s"
             # print('Consulta RawPart\t',sql)
             try:
                 errores_extraccion = json.dumps(errores_extraccion)
-                self.cursor.execute(sql, (sitio, raw, anio, errores_extraccion, extract, ))
+                self.cursor.execute(sql, (sitio, raw, anio, errores_extraccion, extract, raw, ))
                 # para que persistan los datos
                 self.connection.commit()
                 idRaw = self.search_IdRawPartidos(raw)
@@ -352,7 +390,7 @@ class Database:
                 return idRaw
             except Exception as e:
                 # print('Error al inser RAW Partidos')
-                self.log_error(where='Error al insertar RAW Partidos (%s)' %sitio, funtion='Funcion: insert_RawPartidos', exc=str(e))
+                self.log_error(where='Error al insertar RAW Partidos (%s)' %sitio, funtion='Funcion: actualizar_RawPartidos', exc=str(e))
         else:
             # si hay el registro, regresa el ID
             return idRaw
@@ -452,30 +490,94 @@ class Database:
         return errores
 
     def insert_Estadisticas(self, opcion: str, equipo: str, anio: str, pts: str, pj: str, pg: str, pe: str, pp: str, gf: str, gc: str):
-        """Inserta las estadisticas de los equipos en las respectivas tablas usando las palabras clave (Acumulado, Local y Visitante)
-        Ojo si ingresa cualquier otro valor estos se ingresan en la ultima tabla (visitante)
+        """
+            Inserta las estadisticas de los equipos en las respectivas tablas usando las palabras clave (Acumulado, Local y Visitante)
+            Ojo si ingresa cualquier otro valor estos se ingresan en la ultima tabla (visitante)
 
-        Args:
-            opcion (str): hace referencia a los puntos de: Acumulado, Local y Visitante
-            equipo (str): FK del equipo
-            anio (str): Anio de la estadistica
-            pts (str): Puntos acumulados de esta manera
-            pj (str): PARTIDOS JUGADOS a la fecha
-            pg (str): PARTIDOS GANADOS a la fecha
-            pe (str): PARTIDOS EMPATADOS a la fecha
-            pp (str): PARTIDOS PERDIDOS a la fecha
-            gf (str): PARTIDOS GOLES a FAVOR a la fecha
-            gc (str): PARTIDOS GOLES en CONTRA a la fecha
+            Args:
+                opcion (str): hace referencia a los puntos de: Acumulado, Local y Visitante
+                equipo (str): FK del equipo
+                anio (str): Anio de la estadistica
+                pts (str): Puntos acumulados de esta manera
+                pj (str): PARTIDOS JUGADOS a la fecha
+                pg (str): PARTIDOS GANADOS a la fecha
+                pe (str): PARTIDOS EMPATADOS a la fecha
+                pp (str): PARTIDOS PERDIDOS a la fecha
+                gf (str): PARTIDOS GOLES a FAVOR a la fecha
+                gc (str): PARTIDOS GOLES en CONTRA a la fecha
 
-        Returns:
-            list: Result list del registro
+            Returns:
+                list: Result list del registro
         """
         # print('{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}'.format(opcion, equipo, anio, pts, pj, pg, pe, pp, gf, gc))
         # se analiza si existe un registro con el ID del equipo y el anio (para no duplicar registros)
         regEstad = self.search_EstadisticaAnio(equipo, opcion, anio)
         # Se toma el 2 valor del Result pueste este corresponde al FK del Equipo
         # print('\nBuscando estadisticas\n{}\n\n'.format(regEstad))
-        if regEstad is None:
+        now = datetime.now()
+        if now.year == anio and regEstad is not None:
+            # anio actual
+            # en caso de ser el anio actual actualiza el registro
+            return self.actualizar_Estadisticas(opcion, equipo, anio, pts, pj, pg, pe, pp, gf, gc)
+        else:
+            if regEstad is None:
+                #  or regEstad == 0 or len(regEstad) == 0
+                # sino hay registro alguno
+                idEq = self.search_equipo(equipo)
+                if idEq is None:
+                    # inserta el registro del equipo
+                    idEq = self.insert_Equipo(equipo, '')
+                    # se llama a la funcion para proceder a registrar la estadistica
+                    return self.insert_Estadisticas(opcion, equipo, anio, pts, pj, pg, pe, pp, gf, gc)
+                else:
+                    sql = ''
+                    # si esta registro el equipo, regresa el ID del registro
+                    if opcion == 'Acumulado':
+                        sql = "INSERT INTO posicionestotal(fkEq, year, Pts, PJ, PG, PE, PP, GF, GC) VALUES (%s, %s, %s, %s, %s, %s, %s,%s,%s)"
+                    elif opcion == 'Local':
+                        sql = "INSERT INTO posicioneslocal(fkEq, year, Pts, PJ, PG, PE, PP, GF, GC) VALUES (%s, %s, %s, %s, %s, %s, %s,%s,%s)"
+                    else:
+                        sql = "INSERT INTO posicionesvisitante(fkEq, year, Pts, PJ, PG, PE, PP, GF, GC) VALUES (%s, %s, %s, %s, %s, %s, %s,%s,%s)"
+                    try:
+                        self.cursor.execute(sql, (idEq[0], anio, pts, pj, pg, pe, pp, gf, gc, ))
+                        # para que persistan los datos
+                        self.connection.commit()
+                        idEq = self.search_EstadisticaAnio(equipo, opcion, anio)
+                        # regresa el ID del registro
+                        # print('ID:', idEq[0])
+                        return idEq
+                    except Exception as e:
+                        # raise
+                        self.log_error(where='Error al insertar Estadisticas', funtion='Funcion: insert_Estadisticas', exc=str(e))
+            else:
+                return regEstad
+
+    def actualizar_Estadisticas(self, opcion: str, equipo: str, anio: str, pts: str, pj: str, pg: str, pe: str, pp: str, gf: str, gc: str):
+        """
+            ACTUALIZA las estadisticas de los equipos en las respectivas tablas usando las palabras clave (Acumulado, Local y Visitante)
+            Ojo si ingresa cualquier otro valor estos se ingresan en la ultima tabla (visitante)
+
+            Args:
+                opcion (str): hace referencia a los puntos de: Acumulado, Local y Visitante
+                equipo (str): FK del equipo
+                anio (str): Anio de la estadistica
+                pts (str): Puntos acumulados de esta manera
+                pj (str): PARTIDOS JUGADOS a la fecha
+                pg (str): PARTIDOS GANADOS a la fecha
+                pe (str): PARTIDOS EMPATADOS a la fecha
+                pp (str): PARTIDOS PERDIDOS a la fecha
+                gf (str): PARTIDOS GOLES a FAVOR a la fecha
+                gc (str): PARTIDOS GOLES en CONTRA a la fecha
+
+            Returns:
+                list: Result list del registro
+        """
+        # print('{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}'.format(opcion, equipo, anio, pts, pj, pg, pe, pp, gf, gc))
+        # se analiza si existe un registro con el ID del equipo y el anio (para no duplicar registros)
+        regEstad = self.search_EstadisticaAnio(equipo, opcion, anio)
+        # Se toma el 2 valor del Result pueste este corresponde al FK del Equipo
+        # print('\nBuscando estadisticas\n{}\n\n'.format(regEstad))
+        if regEstad is not None:
             #  or regEstad == 0 or len(regEstad) == 0
             # sino hay registro alguno
             idEq = self.search_equipo(equipo)
@@ -483,18 +585,19 @@ class Database:
                 # inserta el registro del equipo
                 idEq = self.insert_Equipo(equipo, '')
                 # se llama a la funcion para proceder a registrar la estadistica
-                return self.insert_Estadisticas(opcion, equipo, anio, pts, pj, pg, pe, pp, gf, gc)
+                return self.actualizar_Estadisticas(opcion, equipo, anio, pts, pj, pg, pe, pp, gf, gc)
             else:
                 sql = ''
                 # si esta registro el equipo, regresa el ID del registro
+                # UPDATE posicionestotal SET idP='[value-1]',fkEq='[value-2]',year='[value-3]',Pts='[value-4]',PJ='[value-5]',PG='[value-6]',PE='[value-7]',PP='[value-8]',GF='[value-9]',GC='[value-10]' WHERE 1
                 if opcion == 'Acumulado':
-                    sql = "INSERT INTO posicionestotal(fkEq, year, Pts, PJ, PG, PE, PP, GF, GC) VALUES (%s, %s, %s, %s, %s, %s, %s,%s,%s)"
+                    sql = "UPDATE posicionestotal SET year = %s, Pts = %s, PJ = %s, PG = %s, PE = %s, PP = %s, GF = %s, GC = %s WHERE fkEq= %s"
                 elif opcion == 'Local':
-                    sql = "INSERT INTO posicioneslocal(fkEq, year, Pts, PJ, PG, PE, PP, GF, GC) VALUES (%s, %s, %s, %s, %s, %s, %s,%s,%s)"
+                    sql = "UPDATE posicioneslocal SET year = %s, Pts = %s, PJ = %s, PG = %s, PE = %s, PP = %s, GF = %s, GC = %s WHERE fkEq= %s"
                 else:
-                    sql = "INSERT INTO posicionesvisitante(fkEq, year, Pts, PJ, PG, PE, PP, GF, GC) VALUES (%s, %s, %s, %s, %s, %s, %s,%s,%s)"
+                    sql = "UPDATE posicionesvisitante SET year = %s, Pts = %s, PJ = %s, PG = %s, PE = %s, PP = %s, GF = %s, GC = %s WHERE fkEq= %s"
                 try:
-                    self.cursor.execute(sql, (idEq[0], anio, pts, pj, pg, pe, pp, gf, gc, ))
+                    self.cursor.execute(sql, (anio, pts, pj, pg, pe, pp, gf, gc, idEq[0], ))
                     # para que persistan los datos
                     self.connection.commit()
                     idEq = self.search_EstadisticaAnio(equipo, opcion, anio)
@@ -503,7 +606,7 @@ class Database:
                     return idEq
                 except Exception as e:
                     # raise
-                    self.log_error(where='Error al insertar Estadisticas', funtion='Funcion: insert_Estadisticas', exc=str(e))
+                    self.log_error(where='Error al insertar Estadisticas', funtion='Funcion: actualizar_Estadisticas', exc=str(e))
         else:
             return regEstad
 

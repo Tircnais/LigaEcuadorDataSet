@@ -22,8 +22,8 @@ anio = datetime.now().year
 while anio > 2009:
     diccionario['url'] = f"https://footballdatabase.com/league-scores-tables/ecuador-serie-a-{anio}"
     url = diccionario['url']
-    # print('URL a consultar:\t{}'.format(url))
-    print('Anio extraer data:\t{}'.format(anio))
+    print('URL a consultar:\t{}'.format(url))
+    # print('Anio extraer data:\t{}'.format(anio))
     
     metadataEstadisticas = objExtraction.run_extraction(parameters=diccionario)
     # Dicionario con la metadata extraida (Acumulado, Local, Visitante)
@@ -62,7 +62,7 @@ while anio > 2009:
     del objProcessEquipos
 
     # Insertando los equipos
-    print('Tipo de dato que envia para equipos:\t{}'.format(type(processEstadisticas)))
+    # print('Tipo de dato que envia para equipos:\t{}'.format(type(processEstadisticas)))
     errores = objDB.insert_Equipos(processEstadisticas)
 
     objProEstadisticas = ProcessEstadisticas()
@@ -78,7 +78,8 @@ while anio > 2009:
         opciones = estadisticas['data']
         # print('estadisticas-key::\t{}\tTipo:/t{}'.format(key, type(opciones[key])))
         # print('Como\tClub\tYear\tPts\tGD\tPJ\tPG\tPE\tPP\tGA\tGC')
-        resgHtmlEstadista =''
+        # P	+/-	M	W	D	L	F	A
+        resgHtmlEstadista = None
         for element in opciones[key]:
             # print('Estadistas y equipo\n{}'.format(element))
             equipo = element[1]
